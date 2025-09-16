@@ -1,192 +1,104 @@
-import React from 'react'
-import { motion } from 'framer-motion'
-import { BookOpen, Clock, Users, Award, ArrowRight, Sparkles } from 'lucide-react'
-import { useExamStore } from '@/stores/examStore'
-import { useUIStore } from '@/stores/uiStore'
-import { examService } from '@/services/examService'
+import { useExamStore } from "@/stores/examStore";
+import { useUIStore } from "@/stores/uiStore";
+import { motion } from "framer-motion";
+import { ArrowRight, BookOpen, Clock, Users } from "lucide-react";
+import React from "react";
 
-const examOptions = [
-  {
-    id: 'ssc_cgl_tier1',
-    title: 'SSC CGL Tier 1',
-    description: 'Combined Graduate Level Tier 1 Examination',
-    duration: '60 minutes',
-    questions: '100 questions',
-    sections: '4 sections',
-    difficulty: 'Intermediate',
-    color: 'from-blue-600 to-indigo-600',
-    icon: BookOpen,
-    features: ['Sectional Timing', 'Negative Marking', 'Previous Year Pattern']
-  },
-  {
-    id: 'ssc_chsl_tier1',
-    title: 'SSC CHSL Tier 1',
-    description: 'Combined Higher Secondary Level Tier 1 Examination',
-    duration: '60 minutes',
-    questions: '100 questions',
-    sections: '4 sections',
-    difficulty: 'Beginner',
-    color: 'from-emerald-600 to-teal-600',
-    icon: Users,
-    features: ['Sectional Timing', 'Negative Marking', 'Updated Syllabus']
-  },
-  {
-    id: 'ibps_po_prelims',
-    title: 'IBPS PO Prelims',
-    description: 'Probationary Officer Preliminary Examination',
-    duration: '60 minutes',
-    questions: '100 questions',
-    sections: '3 sections',
-    difficulty: 'Advanced',
-    color: 'from-purple-600 to-pink-600',
-    icon: Award,
-    features: ['Sectional Timing', 'High Competition', 'Banking Focus']
-  }
-]
+// ... (keep your examOptions array) ...
 
 export const ExamSelectionScreen: React.FC = () => {
-  const { setSelectedExam, setCurrentScreen } = useExamStore()
-  const { setLoading, addToast } = useUIStore()
+  const { setSelectedExam, setCurrentScreen } = useExamStore();
+  const { setLoading, addToast } = useUIStore();
 
   const handleExamSelect = async (examId: string) => {
-    try {
-      setLoading('exam-selection', { isLoading: true, message: 'Loading exam configuration...' })
-      
-      const examConfig = await examService.getExamConfig(examId)
-      setSelectedExam(examConfig)
-      setCurrentScreen('instructions')
-      
-      addToast({
-        type: 'success',
-        title: 'Exam loaded successfully',
-        message: `${examConfig.title} is ready to start`
-      })
-    } catch (error) {
-      addToast({
-        type: 'error',
-        title: 'Failed to load exam',
-        message: 'Please try again later'
-      })
-    } finally {
-      setLoading('exam-selection', { isLoading: false })
-    }
-  }
+    // ... (keep your handleExamSelect function) ...
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="w-full max-w-7xl">
-        {/* Header */}
+    <div className="min-h-screen w-full bg-gradient-to-br from-primary-100 via-white to-primary-200 flex items-center justify-center p-4">
+      <div className="w-full max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <div className="flex items-center justify-center mb-6">
-            <Sparkles className="w-8 h-8 text-primary-600 mr-3" />
-            <h1 className="text-5xl md:text-7xl font-black bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">
-              Elite Examiner
-            </h1>
-          </div>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            Your ultimate training ground for competitive exams. Experience AI-powered analytics, 
-            real-time performance tracking, and exam patterns that mirror the actual tests.
+          <h1 className="text-5xl md:text-7xl font-bold text-primary-900">
+            Choose Your Challenge
+          </h1>
+          <p className="mt-4 text-lg text-primary-700 max-w-3xl mx-auto">
+            Select an exam to begin your journey to success. Each exam is
+            crafted to simulate the real test experience.
           </p>
         </motion.div>
 
-        {/* Exam Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          {examOptions.map((exam, index) => {
-            const IconComponent = exam.icon
-            return (
-              <motion.div
-                key={exam.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="group"
-              >
-                <div className="card-hover p-8 h-full relative overflow-hidden">
-                  {/* Background Gradient */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${exam.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`} />
-                  
-                  {/* Content */}
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br ${exam.color} text-white`}>
-                        <IconComponent className="w-6 h-6" />
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        exam.difficulty === 'Beginner' ? 'bg-green-100 text-green-700' :
-                        exam.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {exam.difficulty}
-                      </span>
-                    </div>
-
-                    <h3 className="text-2xl font-bold text-slate-900 mb-3">{exam.title}</h3>
-                    <p className="text-slate-600 mb-6 leading-relaxed">{exam.description}</p>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="text-center">
-                        <Clock className="w-5 h-5 text-slate-400 mx-auto mb-1" />
-                        <p className="text-sm font-semibold text-slate-900">{exam.duration}</p>
-                      </div>
-                      <div className="text-center">
-                        <BookOpen className="w-5 h-5 text-slate-400 mx-auto mb-1" />
-                        <p className="text-sm font-semibold text-slate-900">{exam.questions}</p>
-                      </div>
-                      <div className="text-center">
-                        <Users className="w-5 h-5 text-slate-400 mx-auto mb-1" />
-                        <p className="text-sm font-semibold text-slate-900">{exam.sections}</p>
-                      </div>
-                    </div>
-
-                    {/* Features */}
-                    <div className="mb-8">
-                      <h4 className="text-sm font-semibold text-slate-700 mb-3">Key Features:</h4>
-                      <div className="space-y-2">
-                        {exam.features.map((feature, idx) => (
-                          <div key={idx} className="flex items-center text-sm text-slate-600">
-                            <div className="w-1.5 h-1.5 bg-primary-500 rounded-full mr-3" />
-                            {feature}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Action Button */}
-                    <button
-                      onClick={() => handleExamSelect(exam.id)}
-                      className={`w-full btn bg-gradient-to-r ${exam.color} text-white hover:shadow-2xl group-hover:scale-105 transition-all duration-300`}
-                    >
-                      <span>Start Mock Test</span>
-                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </button>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {examOptions.map((exam, index) => (
+            <motion.div
+              key={exam.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              whileHover={{ y: -5 }}
+              className="bg-white rounded-2xl shadow-lg overflow-hidden group"
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-start">
+                  <div
+                    className={`p-3 rounded-xl bg-gradient-to-br ${exam.color} text-white`}
+                  >
+                    <exam.icon className="w-6 h-6" />
+                  </div>
+                  <span
+                    className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                      exam.difficulty === "Beginner"
+                        ? "bg-green-100 text-green-800"
+                        : exam.difficulty === "Intermediate"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {exam.difficulty}
+                  </span>
+                </div>
+                <h3 className="mt-4 text-2xl font-bold text-primary-900">
+                  {exam.title}
+                </h3>
+                <p className="mt-2 text-primary-700">{exam.description}</p>
+              </div>
+              <div className="p-6 bg-primary-50">
+                <div className="flex justify-around text-center">
+                  <div>
+                    <Clock className="w-5 h-5 mx-auto text-primary-500" />
+                    <p className="mt-1 text-sm font-semibold text-primary-900">
+                      {exam.duration}
+                    </p>
+                  </div>
+                  <div>
+                    <BookOpen className="w-5 h-5 mx-auto text-primary-500" />
+                    <p className="mt-1 text-sm font-semibold text-primary-900">
+                      {exam.questions}
+                    </p>
+                  </div>
+                  <div>
+                    <Users className="w-5 h-5 mx-auto text-primary-500" />
+                    <p className="mt-1 text-sm font-semibold text-primary-900">
+                      {exam.sections}
+                    </p>
                   </div>
                 </div>
-              </motion.div>
-            )
-          })}
+              </div>
+              <button
+                onClick={() => handleExamSelect(exam.id)}
+                className="w-full bg-primary-600 text-white font-semibold py-4 px-6 text-lg hover:bg-primary-700 transition-colors duration-300 flex items-center justify-center group"
+              >
+                Start Exam{" "}
+                <ArrowRight className="ml-2 w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
+              </button>
+            </motion.div>
+          ))}
         </div>
-
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-center"
-        >
-          <p className="text-slate-500 text-sm">
-            Built with advanced AI analytics and real-time performance tracking
-          </p>
-          <p className="text-slate-400 text-xs mt-2">
-            © 2025 Elite Examiner Platform. All rights reserved.
-          </p>
-        </motion.div>
       </div>
     </div>
-  )
-}
+  );
+};
