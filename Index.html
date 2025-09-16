@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Examiner - Mock Test Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; overflow: hidden; }
+        .exam-header { background: linear-gradient(135deg, #1e3a8a, #3b82f6); }
+        .question-palette-item { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .question-palette-item:hover { transform: scale(1.1); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+        .answered { background-color: #16a34a !important; color: white !important; }
+        .not-answered { background-color: #dc2626 !important; color: white !important; }
+        .marked { background-color: #9333ea !important; color: white !important; }
+        .not-visited { background-color: #64748b !important; color: white !important; }
+        .marked-answered { position: relative; }
+        .marked-answered::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; bottom: 3px; right: 3px; font-size: 10px; color: #16a34a; background: white; border-radius: 50%; padding: 2px; line-height: 1; }
+        .option-radio { display: none; }
+        .option-label { display: flex; align-items: center; padding: 14px; border: 2px solid #e5e7eb; border-radius: 12px; cursor: pointer; transition: all 0.2s ease-in-out; background-color: #f9fafb; }
+        .option-label:hover { border-color: #60a5fa; }
+        .option-radio:checked + .option-label { background-color: #eff6ff; border-color: #3b82f6; color: #1e40af; font-weight: 600; }
+        .option-label .option-circle { width: 22px; height: 22px; border: 2px solid #9ca3af; border-radius: 50%; margin-right: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease-in-out; flex-shrink: 0; }
+        .option-radio:checked + .option-label .option-circle { background-color: #3b82f6; border-color: #3b82f6; }
+        .option-radio:checked + .option-label .option-circle::after { content: ''; width: 10px; height: 10px; background-color: white; border-radius: 50%; }
+        .animated-bg { background: linear-gradient(-45deg, #eef2ff, #e0e7ff, #c7d2fe, #bfdbfe); background-size: 400% 400%; animation: gradient 15s ease infinite; }
+        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .screen { position: absolute; width: 100%; height: 100%; transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
+        .screen.hidden { opacity: 0; transform: scale(0.98); pointer-events: none; }
+        .review-correct { border-color: #16a34a !important; background-color: #f0fdf4 !important; }
+        .review-incorrect { border-color: #dc2626 !important; background-color: #fef2f2 !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .section-tab { transition: all 0.3s ease; border-bottom: 4px solid transparent; }
+        .section-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+        .section-tab.disabled { cursor: not-allowed; color: #9ca3af; }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid #3b82f6; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e5e7eb; }
+        ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="app-container" class="relative h-screen w-screen">
+
+        <!-- SCREEN 1: EXAM SELECTION (No changes) -->
+        <div id="selection-screen" class="screen flex flex-col items-center justify-center p-4 animated-bg">
+             <div class="w-full max-w-4xl bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 md:p-12 text-center">
+                <h1 class="text-4xl md:text-6xl font-extrabold text-gray-800 tracking-tight fade-in">Elite Examiner Platform</h1>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto mt-4 fade-in" style="animation-delay: 0.2s;">Your personalized training ground for conquering competitive exams. Precision-engineered for peak performance.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 fade-in" style="animation-delay: 0.4s;">
+                    <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 space-y-4">
+                        <h2 class="text-3xl font-bold text-indigo-700">SSC Exams</h2>
+                        <p class="text-gray-500 min-h-[40px]">CGL, CHSL, MTS & more. Master the pattern for both Tier 1 and Tier 2.</p>
+                        <button onclick="showInstructions('ssc_cgl_tier1')" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-indigo-400/50">Start SSC CGL Tier 1 Mock</button>
+                        <button onclick="showInstructions('ssc_chsl_tier1')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-400/50">Start SSC CHSL Tier 1 Mock</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col justify-between">
+                        <div>
+                           <h2 class="text-3xl font-bold text-emerald-700">Banking Exams</h2>
+                            <p class="text-gray-500 mt-4 min-h-[40px]">IBPS, SBI, RRB - PO & Clerk. Sharpen your skills for Prelims and Mains.</p>
+                        </div>
+                        <button onclick="showInstructions('ibps_po_prelims')" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-emerald-400/50">Start IBPS PO Prelims Mock</button>
+                    </div>
+                </div>
+            </div>
+            <p class="absolute bottom-4 text-sm text-gray-600">Built on The Examiner's Blueprint. &copy; 2025</p>
+        </div>
+
+        <!-- SCREEN 2: LOADING SCREEN (No changes) -->
+        <div id="loading-screen" class="screen hidden flex-col items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+            <div class="text-center text-white">
+                <div class="loader mx-auto"></div>
+                <h2 class="text-2xl font-bold mt-6">Generating Your Test...</h2>
+                <p id="loading-text" class="mt-2 text-gray-300">Initializing AI generation engine...</p>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: INSTRUCTIONS (No changes needed, logic will update content) -->
+        <div id="instructions-screen" class="screen hidden flex flex-col items-center justify-center p-4 bg-gray-100">
+            <div class="w-full max-w-3xl bg-white rounded-2xl shadow-2xl fade-in">
+                <div class="p-8">
+                    <h1 id="instructions-title" class="text-3xl font-bold text-center mb-6">Exam Instructions</h1>
+                    <div class="text-gray-700 space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+                        <p>Please read the instructions carefully before you begin the test.</p>
+                        <div id="instructions-details" class="p-4 bg-gray-50 rounded-lg border"></div>
+                        <p><b>General Instructions:</b></p>
+                        <ol id="general-instructions-list" class="list-decimal list-inside space-y-2"></ol>
+                    </div>
+                </div>
+                <div class="p-6 bg-gray-50 rounded-b-2xl border-t">
+                     <div class="flex items-center">
+                        <input id="confirm-instructions" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <label for="confirm-instructions" class="ml-3 block text-sm text-gray-900">I have read and understood all the instructions.</label>
+                    </div>
+                    <div class="text-center mt-6">
+                        <button id="start-exam-btn" onclick="selectExam()" class="bg-indigo-600 text-white font-bold py-3 px-12 rounded-lg transition-all duration-300 shadow-lg hover:shadow-indigo-400/50 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none disabled:scale-100" disabled>Start Test</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: EXAM INTERFACE (Timer UI added) -->
+        <div id="exam-screen" class="screen hidden">
+            <header class="exam-header text-white p-2 flex justify-between items-center fixed top-0 w-full z-10 shadow-lg">
+                <h1 id="exam-title" class="text-xl font-bold ml-4"></h1>
+                <div class="flex items-center space-x-4 mr-4">
+                    <div id="section-timer-container" class="bg-black/20 px-3 py-1 rounded-lg text-lg font-semibold flex items-center hidden">
+                        <span class="text-sm mr-2 opacity-80">Section Time:</span>
+                        <i class="far fa-hourglass-half mr-2"></i>
+                        <span id="section-timer">--:--</span>
+                    </div>
+                    <div class="bg-black/20 px-3 py-1 rounded-lg text-lg font-semibold flex items-center">
+                        <span class="text-sm mr-2 opacity-80">Total Time:</span>
+                        <i class="far fa-clock mr-2"></i>
+                        <span id="timer">--:--</span>
+                    </div>
+                    <button onclick="confirmSubmit()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors shadow-md hover:shadow-lg">Submit Test</button>
+                </div>
+            </header>
+            <div id="section-tabs-container" class="fixed top-[52px] w-full bg-white shadow-md z-10 grid grid-cols-4 text-center font-semibold text-gray-600"></div>
+            <main class="flex pt-[104px] h-screen">
+                <!-- Main Content and Palette (No changes) -->
+                 <div class="flex-grow p-4 md:p-6 overflow-y-auto">
+                    <div id="question-container" class="bg-white p-6 rounded-lg shadow-md min-h-[400px]"></div>
+                    <div class="flex justify-between items-center mt-6">
+                        <button onclick="saveAndNext(true)" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 flex items-center shadow-lg hover:shadow-purple-400/50 transform hover:scale-105"><i class="far fa-bookmark mr-2"></i>Mark for Review & Next</button>
+                        <div>
+                            <button onclick="clearResponse()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg transition-colors mr-2">Clear Response</button>
+                            <button onclick="saveAndNext()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 shadow-lg hover:shadow-green-400/50 transform hover:scale-105">Save & Next</button>
+                        </div>
+                    </div>
+                </div>
+                <aside class="w-1/3 max-w-xs bg-gray-50 p-4 overflow-y-auto hidden md:block border-l">
+                    <div class="bg-white p-4 rounded-lg shadow-md">
+                        <h3 id="palette-title" class="text-lg font-bold mb-4 border-b pb-2"></h3>
+                        <div id="question-palette" class="grid grid-cols-5 gap-2"></div>
+                        <div class="mt-6 space-y-2 text-sm">
+                            <div class="flex items-center"><span class="w-5 h-5 rounded-md answered mr-2"></span> Answered</div>
+                            <div class="flex items-center"><span class="w-5 h-5 rounded-md not-answered mr-2"></span> Not Answered</div>
+                            <div class="flex items-center"><span class="w-5 h-5 rounded-md not-visited mr-2"></span> Not Visited</div>
+                            <div class="flex items-center"><span class="w-5 h-5 rounded-md marked mr-2"></span> Marked for Review</div>
+                            <div class="flex items-center"><span class="w-5 h-5 rounded-md answered marked-answered mr-2"></span> Answered & Marked</div>
+                        </div>
+                    </div>
+                </aside>
+            </main>
+        </div>
+        
+        <!-- SCREEN 5: RESULTS SCREEN (No changes) -->
+        <div id="results-screen" class="screen hidden flex-col items-center justify-center p-4 animated-bg">
+             <div class="w-full max-w-5xl bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 space-y-6 fade-in overflow-y-auto max-h-[90vh]">
+                 <h1 class="text-4xl font-extrabold text-center text-gray-800">Test Analysis</h1>
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div class="relative w-full max-w-sm mx-auto"> <canvas id="results-chart"></canvas> </div>
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div class="bg-white p-4 rounded-xl shadow-lg"> <p class="text-sm text-gray-500">Score</p> <p id="result-score" class="text-4xl font-bold text-green-600">--</p> </div>
+                        <div class="bg-white p-4 rounded-xl shadow-lg"> <p class="text-sm text-gray-500">Accuracy</p> <p id="result-accuracy" class="text-4xl font-bold text-purple-600">--</p> </div>
+                        <div class="bg-white p-4 rounded-xl shadow-lg"> <p class="text-sm text-gray-500">Attempted</p> <p id="result-attempted" class="text-2xl font-bold text-blue-600">--</p> </div>
+                        <div class="bg-white p-4 rounded-xl shadow-lg"> <p class="text-sm text-gray-500">Time Taken</p> <p id="result-time" class="text-2xl font-bold text-orange-500">--</p> </div>
+                    </div>
+                 </div>
+                 <div class="bg-white/80 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4 text-center">Section-wise Performance</h2>
+                    <div id="sectional-results-container" class="space-y-4"></div>
+                 </div>
+                 <div class="text-center pt-4 flex justify-center space-x-4">
+                     <button onclick="showReviewScreen()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-blue-400/50 transform hover:scale-105">Review Answers</button>
+                     <button onclick="restartApp()" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 transition-all duration-300 shadow-lg hover:shadow-indigo-400/50 transform hover:scale-105">Take Another Test</button>
+                 </div>
+             </div>
+        </div>
+
+        <!-- SCREEN 6: REVIEW SCREEN (No changes) -->
+        <div id="review-screen" class="screen hidden flex-col items-center p-4 bg-gray-100">
+             <div class="w-full max-w-4xl bg-white rounded-lg shadow-xl my-8">
+                <header class="bg-gray-800 text-white p-4 rounded-t-lg flex justify-between items-center"><h1 class="text-2xl font-bold">Answer Review</h1><button onclick="backToResults()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">&times; Close</button></header>
+                <div id="review-question-container" class="p-8 max-h-[calc(100vh-200px)] overflow-y-auto"></div>
+                <footer class="p-4 border-t flex justify-between items-center bg-gray-50 rounded-b-lg">
+                    <button id="prev-review-btn" onclick="reviewPrev()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                    <span id="review-q-number" class="font-semibold"></span>
+                    <button id="next-review-btn" onclick="reviewNext()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                </footer>
+             </div>
+        </div>
+
+        <!-- Modals -->
+        <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-20 transition-opacity duration-300">
+            <div class="bg-white rounded-lg p-8 shadow-xl max-w-sm w-full transform transition-all duration-300 scale-95">
+                <h3 class="text-xl font-bold mb-4">Confirm Submission</h3><p class="text-gray-600 mb-6">Are you sure you want to submit the test?</p>
+                <div class="flex justify-end space-x-4"><button onclick="closeModal('confirm-modal')" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button><button onclick="submitTest()" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">Submit</button></div>
+            </div>
+        </div>
+        <div id="section-end-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-20 transition-opacity duration-300">
+            <div class="bg-white rounded-lg p-8 shadow-xl max-w-sm w-full transform transition-all duration-300 scale-95 text-center">
+                <i class="far fa-check-circle text-5xl text-green-500 mb-4"></i>
+                <h3 id="section-end-title" class="text-xl font-bold mb-4">Section Time's Up!</h3><p id="section-end-text" class="text-gray-600 mb-6">Moving to the next section...</p>
+                <div class="flex justify-center"><button id="section-end-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Continue</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="question_bank_generator.js"></script>
+    <script>
+        let currentExamKey = null, examData = null, currentQuestions = [], userAnswers = [];
+        let sectionNames = [], sectionOffsets = [];
+        let currentQuestionIndex = 0, currentSectionIndex = 0, currentReviewIndex = 0;
+        let mainTimerInterval, sectionTimerInterval, timeRemaining, sectionTimeRemaining, resultsChart;
+        let isSectionalTimed = false;
+
+        const screens = { selection: document.getElementById('selection-screen'), loading: document.getElementById('loading-screen'), instructions: document.getElementById('instructions-screen'), exam: document.getElementById('exam-screen'), results: document.getElementById('results-screen'), review: document.getElementById('review-screen'), };
+
+        function showScreen(screen) { Object.values(screens).forEach(s => s.classList.add('hidden')); screens[screen].classList.remove('hidden'); }
+
+        function showInstructions(examKey) {
+            showScreen('loading');
+            const loadingText = document.getElementById('loading-text');
+            const messages = ["Analyzing difficulty matrix...", "Cross-referencing previous year patterns...", "Generating unique question set...", "Finalizing test structure..."];
+            let messageIndex = 0;
+            const interval = setInterval(() => { loadingText.textContent = messages[messageIndex++ % messages.length]; }, 700);
+
+            setTimeout(() => {
+                clearInterval(interval);
+                currentExamKey = examKey;
+                examData = generateQuestionBank(examKey);
+                isSectionalTimed = examData.isSectionalTimed;
+
+                document.getElementById('instructions-title').textContent = `${examData.title} - Instructions`;
+                const totalQuestions = Object.values(examData.sections).reduce((acc, sec) => acc + sec.questions.length, 0);
+                document.getElementById('instructions-details').innerHTML = `<p><b>Total Duration:</b> ${examData.duration / 60} minutes</p><p><b>Total Questions:</b> ${totalQuestions}</p><p><b>Marking Scheme:</b> ${examData.marking.correct} marks for each correct answer, ${examData.marking.incorrect} marks deducted for each wrong answer.</p><p><b>Sections:</b></p><ul class="list-disc list-inside ml-4">${Object.keys(examData.sections).map(name => `<li>${name} (${examData.sections[name].questions.length} questions)</li>`).join('')}</ul>`;
+                
+                const instructionsList = document.getElementById('general-instructions-list');
+                let instructionsHTML = `<li>The clock will be set at the server. The countdown timer at the top right corner of the screen will display the remaining time available for you to complete the examination.</li><li>The Question Palette will show the status of each question.</li><li>You can click on the question number in the Question Palette to go to that question directly.</li>`;
+                if(isSectionalTimed) {
+                    instructionsHTML += `<li class="font-bold text-red-600">This test has sectional timings. You will be automatically moved to the next section when the time for the current section is over. You cannot switch between sections manually.</li>`
+                }
+                instructionsList.innerHTML = instructionsHTML;
+
+                document.getElementById('confirm-instructions').checked = false;
+                document.getElementById('start-exam-btn').disabled = true;
+                document.getElementById('confirm-instructions').onchange = () => { document.getElementById('start-exam-btn').disabled = !document.getElementById('confirm-instructions').checked; };
+                showScreen('instructions');
+            }, 2500);
+        }
+
+        function selectExam() {
+            sectionNames = Object.keys(examData.sections);
+            currentQuestions = sectionNames.flatMap(name => examData.sections[name].questions);
+            sectionOffsets = sectionNames.reduce((acc, name) => { const prevOffset = acc.length > 0 ? acc[acc.length - 1] : 0; const prevLength = acc.length > 0 ? examData.sections[sectionNames[acc.length - 1]].questions.length : 0; acc.push(prevOffset + prevLength); return acc; }, []);
+            
+            timeRemaining = examData.duration;
+            document.getElementById('exam-title').textContent = examData.title;
+            userAnswers = currentQuestions.map(q => ({ id: q.id, answer: null, status: 'not-visited' }));
+            
+            currentQuestionIndex = 0;
+            currentSectionIndex = 0;
+            userAnswers[0].status = 'not-answered';
+            
+            buildSectionTabs();
+            loadQuestion(0);
+            startTimers();
+            showScreen('exam');
+        }
+
+        function buildSectionTabs() {
+            const container = document.getElementById('section-tabs-container');
+            container.innerHTML = sectionNames.map((name, i) => `<div id="tab-${i}" onclick="${isSectionalTimed ? '' : `switchSection(${i})`}" class="section-tab p-4 ${isSectionalTimed ? 'disabled' : 'cursor-pointer'}">${name}</div>`).join('');
+            updateActiveTab();
+        }
+
+        function updateActiveTab() {
+            sectionNames.forEach((_, i) => document.getElementById(`tab-${i}`).classList.remove('active'));
+            document.getElementById(`tab-${currentSectionIndex}`).classList.add('active');
+        }
+        
+        function switchSection(index, isAutoSwitch = false) {
+            if (isSectionalTimed && !isAutoSwitch) return; // Prevent manual switch in timed tests
+            currentSectionIndex = index;
+            currentQuestionIndex = sectionOffsets[index - 1] || 0;
+            if(userAnswers[currentQuestionIndex].status === 'not-visited') userAnswers[currentQuestionIndex].status = 'not-answered';
+            updateActiveTab();
+            loadQuestion(currentQuestionIndex);
+            if (isSectionalTimed) startSectionTimer(); // Start timer for the new section
+        }
+
+        function loadQuestion(index) {
+            const question = currentQuestions[index];
+            const userAnswer = userAnswers[index].answer;
+            const container = document.getElementById('question-container');
+            let optionsHtml = question.options.map((opt, i) => `<div class="fade-in" style="animation-delay: ${i * 0.1}s"><input type="radio" name="option" value="${opt}" id="opt${i}" class="option-radio" ${userAnswer == opt ? 'checked' : ''}><label for="opt${i}" class="option-label"><span class="option-circle"></span><span class="ml-2">${opt}</span></label></div>`).join('');
+            container.innerHTML = `<div class="mb-4 flex justify-between items-center"><span class="font-bold text-xl text-gray-700">Question ${index + 1}</span></div><p class="text-lg mb-6 leading-relaxed">${question.text}</p><div class="space-y-4">${optionsHtml}</div>`;
+            buildPalette();
+        }
+
+        function buildPalette() {
+            const sectionStart = sectionOffsets[currentSectionIndex - 1] || 0;
+            const sectionEnd = sectionOffsets[currentSectionIndex] || currentQuestions.length;
+            const sectionQs = Array.from({ length: sectionEnd - sectionStart }, (_, i) => i + sectionStart);
+            document.getElementById('palette-title').textContent = sectionNames[currentSectionIndex];
+            document.getElementById('question-palette').innerHTML = sectionQs.map(qIndex => `<div id="pal-${qIndex}" onclick="jumpToQuestion(${qIndex})" class="question-palette-item w-10 h-10 flex items-center justify-center font-bold rounded-lg cursor-pointer ${getStatusClass(userAnswers[qIndex].status)}">${qIndex + 1}</div>`).join('');
+            updateActivePaletteItem();
+        }
+
+        function updateActivePaletteItem() { currentQuestions.forEach((_,i) => { const palItem = document.getElementById(`pal-${i}`); if (palItem) { palItem.classList.remove('ring-4', 'ring-blue-500/50'); if (i === currentQuestionIndex) palItem.classList.add('ring-4', 'ring-blue-500/50'); } }); }
+        function getStatusClass(status) { const map = { 'answered': 'answered', 'not-answered': 'not-answered', 'marked': 'marked', 'marked-answered': 'answered marked-answered' }; return map[status] || 'not-visited'; }
+
+        function saveAndNext(isMarking = false) {
+            const selectedOption = document.querySelector('input[name="option"]:checked');
+            if (selectedOption) { userAnswers[currentQuestionIndex].answer = selectedOption.value; userAnswers[currentQuestionIndex].status = isMarking ? 'marked-answered' : 'answered'; } 
+            else { if (isMarking) userAnswers[currentQuestionIndex].status = 'marked'; else if (['not-visited', 'not-answered'].includes(userAnswers[currentQuestionIndex].status)) userAnswers[currentQuestionIndex].status = 'not-answered'; }
+            
+            const currentSectionEnd = (sectionOffsets[currentSectionIndex] || currentQuestions.length) -1;
+            if (currentQuestionIndex < currentSectionEnd) {
+                currentQuestionIndex++;
+                if(userAnswers[currentQuestionIndex].status === 'not-visited') userAnswers[currentQuestionIndex].status = 'not-answered';
+                loadQuestion(currentQuestionIndex);
+            } else {
+                buildPalette();
+            }
+        }
+        
+        function clearResponse() { userAnswers[currentQuestionIndex].answer = null; userAnswers[currentQuestionIndex].status = userAnswers[currentQuestionIndex].status === 'marked-answered' ? 'marked' : 'not-answered'; loadQuestion(currentQuestionIndex); }
+        function jumpToQuestion(index) { if (index >= 0 && index < currentQuestions.length) { if (userAnswers[currentQuestionIndex].status === 'not-visited') userAnswers[currentQuestionIndex].status = 'not-answered'; currentQuestionIndex = index; if (userAnswers[currentQuestionIndex].status === 'not-visited') userAnswers[currentQuestionIndex].status = 'not-answered'; loadQuestion(index); } }
+
+        function formatTime(seconds) { const min = Math.floor(seconds / 60); const sec = seconds % 60; return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`; }
+
+        function startTimers() {
+            // Main Timer
+            const timerEl = document.getElementById('timer');
+            mainTimerInterval = setInterval(() => { timeRemaining--; timerEl.textContent = formatTime(timeRemaining); if (timeRemaining <= 0) { clearInterval(mainTimerInterval); submitTest(); } }, 1000);
+            // Sectional Timer
+            if (isSectionalTimed) {
+                document.getElementById('section-timer-container').classList.remove('hidden');
+                startSectionTimer();
+            }
+        }
+
+        function startSectionTimer() {
+            clearInterval(sectionTimerInterval);
+            sectionTimeRemaining = examData.sections[sectionNames[currentSectionIndex]].duration;
+            const sectionTimerEl = document.getElementById('section-timer');
+            sectionTimerInterval = setInterval(() => {
+                sectionTimeRemaining--;
+                sectionTimerEl.textContent = formatTime(sectionTimeRemaining);
+                if (sectionTimeRemaining <= 0) {
+                    clearInterval(sectionTimerInterval);
+                    handleSectionEnd();
+                }
+            }, 1000);
+        }
+        
+        function handleSectionEnd() {
+            const isLastSection = currentSectionIndex === sectionNames.length - 1;
+            const modal = document.getElementById('section-end-modal');
+            
+            if (isLastSection) {
+                document.getElementById('section-end-title').textContent = "Final Section Finished!";
+                document.getElementById('section-end-text').textContent = "The test will now be submitted.";
+                document.getElementById('section-end-btn').onclick = submitTest;
+            } else {
+                document.getElementById('section-end-title').textContent = `Section "${sectionNames[currentSectionIndex]}" Time's Up!`;
+                document.getElementById('section-end-text').textContent = `Moving to the next section: "${sectionNames[currentSectionIndex + 1]}"`;
+                document.getElementById('section-end-btn').onclick = () => {
+                    closeModal('section-end-modal');
+                    switchSection(currentSectionIndex + 1, true);
+                };
+            }
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.querySelector('div').classList.remove('scale-95'), 10);
+        }
+
+        function confirmSubmit() { const modal = document.getElementById('confirm-modal'); modal.classList.remove('hidden'); setTimeout(() => modal.querySelector('div').classList.remove('scale-95'), 10); }
+        function closeModal(modalId) { const modal = document.getElementById(modalId); modal.querySelector('div').classList.add('scale-95'); setTimeout(() => modal.classList.add('hidden'), 300); }
+
+        function submitTest() {
+            closeModal('confirm-modal');
+            closeModal('section-end-modal');
+            clearInterval(mainTimerInterval);
+            clearInterval(sectionTimerInterval);
+            calculateResults();
+            showScreen('results');
+        }
+
+        // --- All other functions (calculateResults, review screen, etc.) remain unchanged ---
+        function calculateResults() {
+            let totalScore = 0, totalCorrect = 0, totalIncorrect = 0, totalAttempted = 0;
+            const sectionalResults = {};
+            sectionNames.forEach((name, i) => {
+                const sectionStart = sectionOffsets[i-1] || 0;
+                const sectionEnd = sectionOffsets[i] || currentQuestions.length;
+                let sectionScore = 0, sectionCorrect = 0, sectionIncorrect = 0, sectionAttempted = 0;
+                for(let j = sectionStart; j < sectionEnd; j++) {
+                     if (userAnswers[j].answer !== null) {
+                        sectionAttempted++;
+                        if (userAnswers[j].answer == currentQuestions[j].answer) { sectionCorrect++; sectionScore += examData.marking.correct; } 
+                        else { sectionIncorrect++; sectionScore += examData.marking.incorrect; }
+                    }
+                }
+                sectionalResults[name] = { score: sectionScore, correct: sectionCorrect, incorrect: sectionIncorrect, attempted: sectionAttempted, total: sectionEnd - sectionStart };
+                totalScore += sectionScore; totalCorrect += sectionCorrect; totalIncorrect += sectionIncorrect; totalAttempted += sectionAttempted;
+            });
+            const totalQuestions = currentQuestions.length; const unattempted = totalQuestions - totalAttempted; const accuracy = totalAttempted > 0 ? ((totalCorrect / totalAttempted) * 100).toFixed(2) : 0; const timeTakenSec = examData.duration - timeRemaining; const timeTakenMin = Math.floor(timeTakenSec / 60); const timeTakenRemSec = timeTakenSec % 60;
+            document.getElementById('result-score').textContent = totalScore.toFixed(2); document.getElementById('result-attempted').textContent = `${totalAttempted}/${totalQuestions}`; document.getElementById('result-accuracy').textContent = `${accuracy}%`; document.getElementById('result-time').textContent = `${String(timeTakenMin).padStart(2,'0')}:${String(timeTakenRemSec).padStart(2,'0')}`;
+            document.getElementById('sectional-results-container').innerHTML = Object.entries(sectionalResults).map(([name, data]) => `<div class="grid grid-cols-5 gap-4 items-center text-center p-3 bg-gray-50 rounded-lg"><p class="font-bold text-left col-span-2 md:col-span-1">${name}</p><p><span class="text-sm text-gray-500 block">Score</span><span class="font-semibold">${data.score.toFixed(2)}</span></p><p><span class="text-sm text-gray-500 block">Correct</span><span class="font-semibold text-green-600">${data.correct}</span></p><p><span class="text-sm text-gray-500 block">Incorrect</span><span class="font-semibold text-red-600">${data.incorrect}</span></p><p><span class="text-sm text-gray-500 block">Attempted</span><span class="font-semibold">${data.attempted}/${data.total}</span></p></div>`).join('');
+            const ctx = document.getElementById('results-chart').getContext('2d'); if (resultsChart) resultsChart.destroy();
+            resultsChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Correct', 'Incorrect', 'Unattempted'], datasets: [{ data: [totalCorrect, totalIncorrect, unattempted], backgroundColor: ['#16a34a', '#dc2626', '#64748b'], borderColor: '#ffffff', borderWidth: 4 }] }, options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' } } } });
+        }
+        function showReviewScreen() { currentReviewIndex = 0; loadReviewQuestion(0); showScreen('review'); }
+        function backToResults() { showScreen('results'); }
+        function reviewNext() { if (currentReviewIndex < currentQuestions.length - 1) loadReviewQuestion(++currentReviewIndex); }
+        function reviewPrev() { if (currentReviewIndex > 0) loadReviewQuestion(--currentReviewIndex); }
+        function loadReviewQuestion(index) {
+            const question = currentQuestions[index]; const userAnswer = userAnswers[index].answer; const container = document.getElementById('review-question-container');
+            let optionsHtml = question.options.map(opt => { let classes = "option-label p-3 text-left"; if (opt == question.answer) classes += " review-correct font-semibold"; else if (opt == userAnswer) classes += " review-incorrect"; return `<div class="${classes}">${opt}</div>`; }).join('');
+            container.innerHTML = `<p class="mb-2 font-semibold text-gray-600">Question ${index + 1}:</p><p class="text-lg mb-6 font-medium">${question.text}</p><div class="space-y-3 mb-6">${optionsHtml}</div><div class="p-4 bg-blue-50 rounded-lg border border-blue-200"><h4 class="font-bold mb-2 text-blue-800">Explanation:</h4><p class="text-blue-700">${question.explanation}</p></div>`;
+            document.getElementById('review-q-number').textContent = `Question ${index + 1} / ${currentQuestions.length}`; document.getElementById('prev-review-btn').disabled = index === 0; document.getElementById('next-review-btn').disabled = index === currentQuestions.length - 1;
+        }
+        function restartApp() { showScreen('selection'); }
+        
+        // Initial load
+        showScreen('selection');
+    </script>
+</body>
+</html>
+
